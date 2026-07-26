@@ -1,0 +1,9 @@
+.venv/
+.build-venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+outputs/
+*.app/
+launcher_error.txt
+.DS_Store

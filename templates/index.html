@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Check title and version IDs against an authenticated API."
+    />
+    <title>API ID Status Checker</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div>
+          <p class="eyebrow">Batch API utility</p>
+          <h1>API ID Status Checker</h1>
+          <p class="hero-copy">
+            Check every ID in <code>input.txt</code>, keep the run responsive,
+            and download both a clean result list and a detailed audit log.
+          </p>
+        </div>
+        <div class="local-badge" title="Token stays in this running process">
+          <span class="status-dot"></span>
+          Local utility
+        </div>
+      </header>
+
+      <main>
+        <section class="route-grid" aria-label="Live request URL previews">
+          <article id="title-route-card" class="route-card title-route">
+            <div class="route-prefix">1T</div>
+            <div>
+              <p>Title request preview</p>
+              <code id="title-route-preview"></code>
+            </div>
+          </article>
+          <article id="version-route-card" class="route-card version-route">
+            <div class="route-prefix">1V</div>
+            <div>
+              <p>Version request preview</p>
+              <code id="version-route-preview"></code>
+            </div>
+          </article>
+        </section>
+
+        <div class="content-grid">
+          <section class="panel form-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-number">01</p>
+                <h2>Configure the request</h2>
+              </div>
+              <span class="secure-note">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 10V7a5 5 0 0 1 10 0v3m-11 0h12v10H6V10Z" />
+                </svg>
+                Token is never written to logs
+              </span>
+            </div>
+
+            <form id="job-form">
+              <label class="field full-field">
+                <span>Root API URL</span>
+                <input
+                  id="root-url"
+                  name="root_url"
+                  type="url"
+                  placeholder="https://api.example.com"
+                  autocomplete="url"
+                  required
+                />
+                <small>
+                  Trailing slashes are removed before the selected path is
+                  appended.
+                </small>
+              </label>
+
+              <fieldset class="route-template-fields">
+                <legend>Route templates</legend>
+                <p id="route-template-help" class="route-template-help">
+                  Use <code>{id}</code> exactly once, either by itself or within
+                  a path segment such as <code>OTP:{id}</code>. Paths are
+                  case-sensitive and are joined to the root URL with exactly
+                  one slash.
+                </p>
+                <div class="form-row">
+                  <label class="field">
+                    <span>1T title path</span>
+                    <input
+                      id="title-path-template"
+                      class="route-template-input"
+                      name="title_path_template"
+                      type="text"
+                      value="/v3/titles/{id}"
+                      maxlength="2048"
+                      autocomplete="off"
+                      autocapitalize="none"
+                      autocorrect="off"
+                      spellcheck="false"
+                      aria-describedby="route-template-help"
+                      required
+                    />
+                  </label>
+                  <label class="field">
+                    <span>1V version path</span>
+                    <input
+                      id="version-path-template"
+                      class="route-template-input"
+                      name="version_path_template"
+                      type="text"
+                      value="/v3/versions/{id}"
+                      maxlength="2048"
+                      autocomplete="off"
+                      autocapitalize="none"
+                      autocorrect="off"
+                      spellcheck="false"
+                      aria-describedby="route-template-help"
+                      required
+                    />
+                  </label>
+                </div>
+              </fieldset>
+
+              <label class="field full-field">
+                <span>Bearer token</span>
+                <div class="password-wrap">
+                  <input
+                    id="token"
+                    name="token"
+                    type="password"
+                    autocomplete="off"
+                    autocapitalize="none"
+                    autocorrect="off"
+                    spellcheck="false"
+                    aria-describedby="token-help"
+                    required
+                  />
+                  <button
+                    id="toggle-token"
+                    class="icon-button"
+                    type="button"
+                    aria-label="Show bearer token"
+                  >
+                    Show
+                  </button>
+                </div>
+                <small id="token-help">
+                  Sent with every API request as
+                  <code>Authorization: Bearer &lt;token&gt;</code>.
+                </small>
+              </label>
+
+              <details class="advanced-options">
+                <summary>Request timing</summary>
+                <div class="form-row detail-fields">
+                  <label class="field">
+                    <span>Delay between calls</span>
+                    <div class="unit-input">
+                      <input
+                        id="delay-seconds"
+                        name="delay_seconds"
+                        type="number"
+                        value="0.2"
+                        min="0"
+                        max="30"
+                        step="0.05"
+                        required
+                      />
+                      <span>seconds</span>
+                    </div>
+                  </label>
+                  <label class="field">
+                    <span>Request timeout</span>
+                    <div class="unit-input">
+                      <input
+                        id="timeout-seconds"
+                        name="timeout_seconds"
+                        type="number"
+                        value="30"
+                        min="1"
+                        max="300"
+                        step="1"
+                        required
+                      />
+                      <span>seconds</span>
+                    </div>
+                  </label>
+                </div>
+              </details>
+
+              <div id="form-error" class="alert error-alert" role="alert" hidden></div>
+
+              <button id="run-button" class="primary-button" type="submit">
+                <span class="button-label">Start API check</span>
+                <span class="button-arrow" aria-hidden="true">→</span>
+              </button>
+            </form>
+          </section>
+
+          <aside class="side-column">
+            <section class="panel input-panel">
+              <div class="panel-heading compact">
+                <div>
+                  <p class="section-number">02</p>
+                  <h2>Input file</h2>
+                </div>
+                <button id="refresh-input" class="text-button" type="button">
+                  Refresh
+                </button>
+              </div>
+              <div id="input-loading" class="muted">Reading input.txt…</div>
+              <div id="input-state" hidden>
+                <div class="input-count">
+                  <strong id="input-count">0</strong>
+                  <span>IDs ready</span>
+                </div>
+                <div class="mini-stats">
+                  <span><b id="title-count">0</b> title</span>
+                  <span><b id="version-count">0</b> version</span>
+                  <span><b id="unsupported-count">0</b> unsupported</span>
+                </div>
+                <p id="input-path" class="file-path"></p>
+                <div id="sample-ids" class="sample-ids"></div>
+              </div>
+              <div id="input-error" class="alert error-alert" role="alert" hidden></div>
+            </section>
+
+            <section
+              id="progress-panel"
+              class="panel progress-panel"
+              aria-live="polite"
+              hidden
+            >
+              <div class="panel-heading compact">
+                <div>
+                  <p class="section-number">03</p>
+                  <h2>Run status</h2>
+                </div>
+                <span id="job-status" class="job-status">Queued</span>
+              </div>
+
+              <div class="progress-row">
+                <span id="progress-label">Preparing…</span>
+                <strong id="progress-percent">0%</strong>
+              </div>
+              <div
+                class="progress-track"
+                role="progressbar"
+                aria-label="API check progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span id="progress-bar"></span>
+              </div>
+              <p id="current-id" class="current-id"></p>
+
+              <div class="result-counts">
+                <div class="result-ok"><b id="ok-count">0</b><span>OK</span></div>
+                <div class="result-missing">
+                  <b id="not-found-count">0</b><span>404</span>
+                </div>
+                <div class="result-error">
+                  <b id="error-count">0</b><span>Errors</span>
+                </div>
+                <div class="result-skipped">
+                  <b id="skipped-count">0</b><span>Skipped</span>
+                </div>
+              </div>
+
+              <div id="job-error" class="alert error-alert" role="alert" hidden></div>
+
+              <div id="downloads" class="downloads" hidden>
+                <a id="summary-download" class="download-link" href="#">
+                  <span>
+                    <b>Summary results</b>
+                    <small>One line per input ID</small>
+                  </span>
+                  <span aria-hidden="true">↓</span>
+                </a>
+                <a id="details-download" class="download-link" href="#">
+                  <span>
+                    <b>Detailed log</b>
+                    <small>Requests and responses</small>
+                  </span>
+                  <span aria-hidden="true">↓</span>
+                </a>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </main>
+
+      <footer>
+        <span>Runs on <code>127.0.0.1</code></span>
+        <span>Exact 200 = OK · 404 = Not Found · all other results = Error</span>
+        <button id="quit-application" class="quit-button" type="button" hidden>
+          Quit application
+        </button>
+      </footer>
+    </div>
+  </body>
+</html>
